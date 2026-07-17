@@ -1,0 +1,51 @@
+{
+  "name": "taildrop-ui",
+  "version": "0.1.1",
+  "description": "A terminal UI for Tailscale's Taildrop — send and receive files over your tailnet with the tailscale CLI.",
+  "type": "module",
+  "bin": {
+    "tdui": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x dist/cli.js",
+    "check:i18n": "tsx scripts/check-i18n.mts",
+    "dev": "tsx src/cli.tsx",
+    "start": "node dist/cli.js"
+  },
+  "keywords": [
+    "tailscale",
+    "taildrop",
+    "tui",
+    "ink",
+    "cli",
+    "macos"
+  ],
+  "author": "dooee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dooee/taildrop-ui.git"
+  },
+  "homepage": "https://github.com/dooee/taildrop-ui#readme",
+  "bugs": {
+    "url": "https://github.com/dooee/taildrop-ui/issues"
+  },
+  "dependencies": {
+    "execa": "^9.5.2",
+    "ink": "^5.1.0",
+    "ink-select-input": "^6.0.0",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.18",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
