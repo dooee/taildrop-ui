@@ -321,7 +321,7 @@ export async function sendPaths(
      * a folder.
      *
      * A lone folder keeps zipFolder and its own name: nothing is being
-     * combined, and "<folder>.zip" says what arrived where taildrop-<time>.zip
+     * combined, and "<folder>.zip" says what arrived where tailtoss-<time>.zip
      * would not.
      *
      * 여러 항목 중에 폴더가 있으면 설정과 무관하게 묶는다. 그러지 않으면 같은 선택이
@@ -331,7 +331,7 @@ export async function sendPaths(
      * 설정이 정한다.
      *
      * 폴더 하나만 고른 경우는 zipFolder 와 그 이름을 유지한다. 합칠 것이 없고,
-     * "<폴더>.zip" 은 taildrop-<시각>.zip 이 못 하는 말을 한다 — 무엇이 도착했는지.
+     * "<폴더>.zip" 은 tailtoss-<시각>.zip 이 못 하는 말을 한다 — 무엇이 도착했는지.
      */
     const hasFolder = picks.some((x) => x.isDir);
     if (picks.length >= 2 && (opts.bundleMultiple || hasFolder)) {
@@ -372,7 +372,7 @@ export async function sendPaths(
       onLog?.(`bundle:${picks.length}`);
       const zipPath = await zipPaths(
         picks.map((x) => x.abs),
-        `taildrop-${timestamp()}.zip`,
+        `tailtoss-${timestamp()}.zip`,
       );
       tempZips.push(zipPath);
       toSend.push(zipPath);
@@ -394,7 +394,7 @@ export async function sendPaths(
      * on the wire, which is what the receiver judges. Picking them up here
      * rather than beside the lstat above is what covers the zips: zipFolder
      * names its archive after the folder, so " docs" becomes " docs.zip" and
-     * fails for the folder's problem, while a bundle's taildrop-<time>.zip is
+     * fails for the folder's problem, while a bundle's tailtoss-<time>.zip is
      * always fine. Judging the picks instead would both miss the first and
      * refuse the second.
      *
@@ -411,7 +411,7 @@ export async function sendPaths(
      * 이름은 toSend 가 확정된 마지막에 판정한다. 이게 실제로 전선에 오르는 이름이고,
      * 받는 쪽이 판정하는 것도 이것이다. 위의 lstat 옆이 아니라 여기서 잡는 이유는
      * zip 때문이다. zipFolder 는 폴더 이름으로 압축 파일 이름을 지어서 " docs" 는
-     * " docs.zip" 이 되어 폴더의 문제로 실패하지만, bundle 의 taildrop-<시각>.zip 은
+     * " docs.zip" 이 되어 폴더의 문제로 실패하지만, bundle 의 tailtoss-<시각>.zip 은
      * 언제나 안전하다. 선택 항목을 판정하면 앞은 놓치고 뒤는 막게 된다.
      *
      * 하나라도 보내기 전에 전부 판정하는 것이 배치를 온전하게 지킨다. `tailscale

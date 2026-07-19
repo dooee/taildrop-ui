@@ -37,7 +37,7 @@ export default function Frame({ screen, footer, children }: Props) {
       {/* Title bar · 타이틀 바 */}
       <Box width={width}>
         <Text backgroundColor="cyan" color="black" bold>
-          {' 🚀 Taildrop '}
+          {' 🚀 Tailtoss '}
         </Text>
         <Text color="cyan">{' ' + t('app.subtitle')}</Text>
         {screen ? <Text dimColor>{'  › ' + screen}</Text> : null}

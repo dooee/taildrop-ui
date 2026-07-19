@@ -182,7 +182,7 @@ async function archive(zipPath: string, items: Item[]): Promise<void> {
 export async function zipFolder(folderPath: string): Promise<string> {
   const abs = path.resolve(folderPath);
   const base = path.basename(abs);
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'taildrop-zip-'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tailtoss-zip-'));
   const zipPath = path.join(tmpDir, `${base}.zip`);
 
   await archiveOrCleanup(zipPath, tmpDir, [{ parent: path.dirname(abs), base }]);
@@ -201,7 +201,7 @@ export async function zipFolder(folderPath: string): Promise<string> {
  * @returns Absolute path of the created zip. / 생성된 zip 파일의 절대 경로.
  */
 export async function zipPaths(paths: string[], zipName: string): Promise<string> {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'taildrop-zip-'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tailtoss-zip-'));
   const zipPath = path.join(tmpDir, zipName);
 
   const items = paths.map((p) => {

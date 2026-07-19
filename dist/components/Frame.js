@@ -23,7 +23,7 @@ export default function Frame({ screen, footer, children }) {
     const width = Math.max(28, Math.min(columns - 2, 66));
     return (React.createElement(Box, { flexDirection: "column" },
         React.createElement(Box, { width: width },
-            React.createElement(Text, { backgroundColor: "cyan", color: "black", bold: true }, ' 🚀 Taildrop '),
+            React.createElement(Text, { backgroundColor: "cyan", color: "black", bold: true }, ' 🚀 Tailtoss '),
             React.createElement(Text, { color: "cyan" }, ' ' + t('app.subtitle')),
             screen ? React.createElement(Text, { dimColor: true }, '  › ' + screen) : null),
         React.createElement(Box, { flexDirection: "column", width: width, borderStyle: "single", borderColor: "gray", borderTop: true, borderBottom: true, borderLeft: false, borderRight: false, paddingY: 0 }, children),

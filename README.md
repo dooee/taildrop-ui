@@ -1,16 +1,16 @@
 **English** · [한국어](README.ko.md)
 
-# taildrop-ui
+# Tailtoss
 
 **A clean terminal UI (TUI) for Tailscale's Taildrop.**
 Built for people who send/receive files with the open-source `tailscale` CLI instead of a GUI client.
 Pick files, choose a target device, and receive — all from the keyboard.
 
 > Send/receive files over your tailnet from the terminal — file browser, device picker.
-> Command: **`tdui`**.
+> Command: **`tailtoss`**.
 
 ```
- 🚀 Taildrop  tailscale file transfer  › Menu
+ 🚀 Tailtoss  tailscale file transfer  › Menu
 ──────────────────────────────────────────────
 What would you like to do?
 Receive folder: /Users/you/Downloads
@@ -26,10 +26,10 @@ Receive folder: /Users/you/Downloads
 
 ---
 
-## Why taildrop-ui
+## Why Tailtoss
 
 Taildrop is Tailscale's built-in way to move files between your own devices — no cloud, no
-accounts. taildrop-ui exists to make it easy to *actually use*: a keyboard-driven terminal
+accounts. Tailtoss exists to make it easy to *actually use*: a keyboard-driven terminal
 UI over the `tailscale` CLI, so you don't have to memorize `tailscale file cp` flags or dig
 up device names. Setup stays light — Node plus the `tailscale` CLI you already run, nothing
 more.
@@ -101,35 +101,35 @@ whichever it finds:
 Install from npm:
 
 ```bash
-npm install -g taildrop-ui
+npm install -g tailtoss
 ```
 
 Then run it **from any directory**:
 
 ```bash
-tdui
+tailtoss
 ```
 
-To update later, run `npm install -g taildrop-ui@latest`.
+To update later, run `npm install -g tailtoss@latest`.
 
 ### From source (for development)
 
 ```bash
-git clone https://github.com/dooee/taildrop-ui.git
-cd taildrop-ui
+git clone https://github.com/dooee/tailtoss.git
+cd tailtoss
 npm install          # install dependencies
 npm run build        # compile to dist/
-npm install -g .     # register the global `tdui` command
+npm install -g .     # register the global `tailtoss` command
 ```
 
-> `npm link` works too and gives you the exact same global `tdui` — only the linking differs:
+> `npm link` works too and gives you the exact same global `tailtoss` — only the linking differs:
 > `npm install -g .` installs a **copied snapshot** of the build, while `npm link` **symlinks
 > this working directory**. So if you plan to edit the source, prefer `npm link`: after
-> `npm run build` your changes show up in `tdui` with no reinstall.
+> `npm run build` your changes show up in `tailtoss` with no reinstall.
 
 ## Usage
 
-Run `tdui` → move through the menu with the arrow keys, select with Enter.
+Run `tailtoss` → move through the menu with the arrow keys, select with Enter.
 
 ### 📤 Send files
 
@@ -173,9 +173,9 @@ Settings are saved to the paths below and persist across runs.
 
 | Platform | Config file                                                           |
 | -------- | --------------------------------------------------------------------- |
-| macOS    | `~/Library/Application Support/taildrop-ui/config.json`              |
-| Linux    | `$XDG_CONFIG_HOME/taildrop-ui/config.json` (default `~/.config/...`) |
-| Windows  | `%APPDATA%\taildrop-ui\config.json`                                  |
+| macOS    | `~/Library/Application Support/tailtoss/config.json`                 |
+| Linux    | `$XDG_CONFIG_HOME/tailtoss/config.json` (default `~/.config/...`)    |
+| Windows  | `%APPDATA%\tailtoss\config.json`                                     |
 
 
 ## Development
@@ -221,7 +221,7 @@ re-run `npm link` (or `npm install -g .`) on that version.
 VPN that links your devices into a private network (a *tailnet*). **Taildrop** is its
 built-in device-to-device file transfer feature.
 
-taildrop-ui is an **independent, unofficial** front-end — not affiliated with or endorsed
+Tailtoss is an **independent, unofficial** front-end — not affiliated with or endorsed
 by Tailscale Inc. It isn't a full CLI wrapper: it drives only the Taildrop file-transfer
 commands (`tailscale file cp` / `file get`) behind a TUI, leaving the rest of the CLI
 alone. It shells out to a `tailscale` binary you install yourself, so without it the app

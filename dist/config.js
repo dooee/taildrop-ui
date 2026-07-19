@@ -14,14 +14,14 @@ function xdgConfigHome(home) {
 function configDir() {
     const home = os.homedir();
     if (process.platform === 'darwin') {
-        return path.join(home, 'Library', 'Application Support', 'taildrop-ui');
+        return path.join(home, 'Library', 'Application Support', 'tailtoss');
     }
     if (process.platform === 'win32') {
-        return path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'taildrop-ui');
+        return path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'tailtoss');
     }
     // linux / others: XDG
     // 리눅스 등: XDG
-    return path.join(xdgConfigHome(home), 'taildrop-ui');
+    return path.join(xdgConfigHome(home), 'tailtoss');
 }
 /**
  * The Linux download folder, read from ~/.config/user-dirs.dirs.

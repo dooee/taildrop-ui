@@ -1,10 +1,10 @@
 {
-  "name": "taildrop-ui",
-  "version": "0.1.1",
+  "name": "tailtoss",
+  "version": "0.2.0",
   "description": "A terminal UI for Tailscale's Taildrop — send and receive files over your tailnet with the tailscale CLI.",
   "type": "module",
   "bin": {
-    "tdui": "dist/cli.js"
+    "tailtoss": "dist/cli.js"
   },
   "files": [
     "dist"
@@ -30,11 +30,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dooee/taildrop-ui.git"
+    "url": "git+https://github.com/dooee/tailtoss.git"
   },
-  "homepage": "https://github.com/dooee/taildrop-ui#readme",
+  "homepage": "https://github.com/dooee/tailtoss#readme",
   "bugs": {
-    "url": "https://github.com/dooee/taildrop-ui/issues"
+    "url": "https://github.com/dooee/tailtoss/issues"
   },
   "dependencies": {
     "execa": "^9.5.2",

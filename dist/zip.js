@@ -156,7 +156,7 @@ async function archive(zipPath, items) {
 export async function zipFolder(folderPath) {
     const abs = path.resolve(folderPath);
     const base = path.basename(abs);
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'taildrop-zip-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tailtoss-zip-'));
     const zipPath = path.join(tmpDir, `${base}.zip`);
     await archiveOrCleanup(zipPath, tmpDir, [{ parent: path.dirname(abs), base }]);
     return zipPath;
@@ -173,7 +173,7 @@ export async function zipFolder(folderPath) {
  * @returns Absolute path of the created zip. / 생성된 zip 파일의 절대 경로.
  */
 export async function zipPaths(paths, zipName) {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'taildrop-zip-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tailtoss-zip-'));
     const zipPath = path.join(tmpDir, zipName);
     const items = paths.map((p) => {
         const abs = path.resolve(p);
