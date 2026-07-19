@@ -16,7 +16,9 @@
     "build": "tsc && chmod +x dist/cli.js",
     "check:i18n": "tsx scripts/check-i18n.mts",
     "dev": "tsx src/cli.tsx",
-    "start": "node dist/cli.js"
+    "start": "node dist/cli.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "tailscale",
@@ -45,7 +47,9 @@
   "devDependencies": {
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
+    "ink-testing-library": "^4.0.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.10"
   }
 }
