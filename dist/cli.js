@@ -2,9 +2,10 @@
 import React from 'react';
 import { render } from 'ink';
 import App from './app.js';
-import { checkTailscale } from './tailscale.js';
+import { checkTailscale, receive } from './tailscale.js';
 import { loadConfig } from './config.js';
 import { makeT } from './i18n.js';
+import { runDown } from './cli-core.js';
 const SETUP_COMMANDS = {
     darwin: {
         install: 'brew install tailscale',
@@ -64,8 +65,38 @@ function guidanceLines(t, platform, needsInstall) {
     });
     return lines;
 }
+/**
+ * Prints the per-platform setup guidance when tailscale is not ready, and exits
+ * non-zero. Shared by the UI launch and --down: both need a running daemon, and
+ * both should guide the same way when it is missing rather than failing with a
+ * raw subprocess error.
+ *
+ * tailscale 이 준비되지 않았을 때 플랫폼별 셋업 안내를 출력하고 비정상 종료한다. UI
+ * 실행과 --down 이 공유한다 — 둘 다 실행 중인 데몬이 필요하고, 없을 때 원시
+ * 서브프로세스 오류로 실패하기보다 같은 방식으로 안내해야 한다.
+ */
+async function ensureReadyOrExit(t, platform) {
+    const status = await checkTailscale();
+    if (status.kind === 'ok')
+        return;
+    const needsInstall = status.kind === 'no-cli';
+    const title = t(needsInstall ? 'setup.noCli.title' : 'setup.daemonDown.title');
+    const intro = t(needsInstall ? 'setup.noCli.intro' : 'setup.daemonDown.intro');
+    const msg = [
+        '',
+        `  ${title}`,
+        '',
+        `  ${intro}`,
+        '',
+        ...guidanceLines(t, platform, needsInstall),
+        `  ${t('setup.verify')}`,
+        '',
+    ];
+    process.stderr.write(msg.join('\n') + '\n');
+    process.exit(1);
+}
 async function main() {
-    const { lang } = loadConfig();
+    const config = loadConfig();
     /*
      * This runs before render(), so there is no React context and useT() is
      * unavailable — build a translator up front with makeT(lang), the same way
@@ -78,26 +109,26 @@ async function main() {
      * 검사기는 이 이유로 cli.tsx 를 하드코딩 스캔에서 제외하지만(check-i18n.mts
      * 참고), 문구는 여전히 사전에서 오므로 두 언어가 어긋나지 않는다.
      */
-    const t = makeT(lang);
+    const t = makeT(config.lang);
     const platform = process.platform;
-    const status = await checkTailscale();
-    if (status.kind !== 'ok') {
-        const needsInstall = status.kind === 'no-cli';
-        const title = t(needsInstall ? 'setup.noCli.title' : 'setup.daemonDown.title');
-        const intro = t(needsInstall ? 'setup.noCli.intro' : 'setup.daemonDown.intro');
-        const msg = [
-            '',
-            `  ${title}`,
-            '',
-            `  ${intro}`,
-            '',
-            ...guidanceLines(t, platform, needsInstall),
-            `  ${t('setup.verify')}`,
-            '',
-        ];
-        process.stderr.write(msg.join('\n') + '\n');
-        process.exit(1);
+    // process.argv is [node, script, ...rest]. --down [path] receives pending
+    // files without the UI; anything else launches the UI as before.
+    // process.argv 는 [node, script, ...rest]. --down [path] 는 UI 없이 대기 파일을
+    // 받고, 그 외에는 예전처럼 UI 를 실행한다.
+    const args = process.argv.slice(2);
+    if (args[0] === '--down') {
+        await ensureReadyOrExit(t, platform);
+        const outcome = await runDown(args[1], {
+            receive,
+            configDownloadDir: config.downloadDir,
+            cwd: process.cwd(),
+            t,
+        });
+        const out = outcome.exitCode === 0 ? process.stdout : process.stderr;
+        out.write(outcome.lines.join('\n') + '\n');
+        process.exit(outcome.exitCode);
     }
+    await ensureReadyOrExit(t, platform);
     render(React.createElement(App, null));
 }
 main().catch((err) => {

@@ -102,17 +102,20 @@ const UI_FILES = [
 
 /**
  * Files scanned for key *references* (the orphan check). This is a superset of
- * UI_FILES: cli.tsx is skipped by the hardcoding scan because it runs before
- * the React context (so a Hangul literal there is legitimate), but it still
- * pulls its setup-guidance strings from the dictionary via makeT — so its keys
- * must count as used, or they would read as orphans.
+ * UI_FILES: cli.tsx and cli-core.ts run outside the React tree (so a Hangul
+ * literal in cli.tsx is legitimate, and cli-core.ts holds only t() calls), but
+ * both pull their strings from the dictionary via makeT — the setup guidance
+ * and the --down summary — so their keys must count as used, or they would read
+ * as orphans. cli-core.ts stays out of UI_FILES because it has no hardcoded
+ * Hangul to scan for.
  *
- * 키 *참조* 검사(고아 검사) 대상 파일. UI_FILES 의 상위집합이다. cli.tsx 는 React
- * 컨텍스트 이전에 돌아 하드코딩 스캔에서 빠지지만(그곳의 한글 리터럴은 정당하다),
- * makeT 로 사전에서 셋업 안내 문구를 가져다 쓴다 — 그 키들이 사용된 것으로
- * 집계되지 않으면 고아로 읽히기 때문이다.
+ * 키 *참조* 검사(고아 검사) 대상 파일. UI_FILES 의 상위집합이다. cli.tsx 와
+ * cli-core.ts 는 React 트리 밖에서 돌지만(그래서 cli.tsx 의 한글 리터럴은 정당하고,
+ * cli-core.ts 는 t() 호출만 담는다), 둘 다 makeT 로 사전에서 문구를 가져다 쓴다 —
+ * 셋업 안내와 --down 요약 — 그 키들이 사용된 것으로 집계되지 않으면 고아로 읽힌다.
+ * cli-core.ts 는 스캔할 하드코딩 한글이 없어 UI_FILES 에는 넣지 않는다.
  */
-const REF_FILES = [...UI_FILES, 'src/cli.tsx'];
+const REF_FILES = [...UI_FILES, 'src/cli.tsx', 'src/cli-core.ts'];
 
 const problems: string[] = [];
 
