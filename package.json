@@ -1,6 +1,6 @@
 {
   "name": "tailtoss",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A terminal UI for Tailscale's Taildrop — send and receive files over your tailnet with the tailscale CLI.",
   "type": "module",
   "bin": {
