@@ -19,15 +19,6 @@ export default function Settings({ config, archiver, onArchiverChange, onChange,
     const [stage, setStage] = useState('menu');
     const [savedKey, setSavedKey] = useState('set.savedDir');
     const [checking, setChecking] = useState(false);
-    /**
-     * ESC returns each submenu to the Settings menu, as the footer hint
-     * promises. pickDir is excluded — FileBrowser owns ESC via onCancel there,
-     * and a second handler would fire alongside it.
-     *
-     * ESC 는 푸터 안내대로 각 서브메뉴에서 설정 메뉴로 돌아간다. pickDir 은
-     * 제외 — 그 화면은 FileBrowser 가 onCancel 로 ESC 를 직접 처리하며,
-     * 여기서도 받으면 핸들러가 이중으로 동작한다.
-     */
     useInput((_input, key) => {
         if (key.escape &&
             (stage === 'pickLang' || stage === 'pickMulti' || stage === 'zip')) {
@@ -40,12 +31,6 @@ export default function Settings({ config, archiver, onArchiverChange, onChange,
         setSavedKey(msgKey);
         setStage('saved');
     };
-    /**
-     * Drops the cached lookup and detects again, so a tool the user installed
-     * while the app was open is picked up without a restart.
-     *
-     * 캐시를 버리고 다시 감지한다. 앱을 켜 둔 채 설치한 도구도 재시작 없이 잡힌다.
-     */
     const recheck = async () => {
         setChecking(true);
         resetArchiverCache();
@@ -54,15 +39,7 @@ export default function Settings({ config, archiver, onArchiverChange, onChange,
         setChecking(false);
     };
     if (stage === 'pickDir') {
-        return (React.createElement(FileBrowser, { mode: "folder", title: t('browser.folderTitle'), 
-            /* A folder that is not there cannot be browsed: listDir would throw and
-             * open on browser.readError with an empty list — at the exact moment
-             * the user came here to fix that folder. Fall through to the browser's
-             * own default (home) instead.
-             * 없는 폴더는 열 수 없다. listDir 이 던져서 빈 목록과 browser.readError 로
-             * 열리는데, 하필 사용자가 그 폴더를 고치러 온 순간이다. 대신 브라우저
-             * 자신의 기본값(홈)으로 넘긴다. */
-            initialDir: dirIssueOf(config.downloadDir) ? undefined : config.downloadDir, onSubmit: ([dir]) => commit({ ...config, downloadDir: dir }, 'set.savedDir'), onCancel: () => setStage('menu') }));
+        return (React.createElement(FileBrowser, { mode: "folder", title: t('browser.folderTitle'), initialDir: dirIssueOf(config.downloadDir) ? undefined : config.downloadDir, onSubmit: ([dir]) => commit({ ...config, downloadDir: dir }, 'set.savedDir'), onCancel: () => setStage('menu') }));
     }
     if (stage === 'pickLang') {
         return (React.createElement(Frame, { screen: t('set.langScreen'), footer: t('common.escBack') },
@@ -115,7 +92,6 @@ export default function Settings({ config, archiver, onArchiverChange, onChange,
                 React.createElement(Box, { marginTop: 1 },
                     React.createElement(SelectInput, { items: [{ key: 'ok', label: t('set.confirm'), value: 'ok' }], indicatorComponent: Indicator, itemComponent: Item, onSelect: () => onDone() })))));
     }
-    // menu · 메뉴
     const multiLabel = config.bundleMultiple ? t('set.multi.zip') : t('set.multi.files');
     const langLabel = config.lang === 'en' ? 'English (EN)' : '한국어 (KO)';
     return (React.createElement(Frame, { screen: t('set.screen'), footer: t('set.footer') },

@@ -113,28 +113,15 @@ const ko = {
     'common.escBack': 'Esc 뒤로',
     'common.enterMenu': 'Enter 메뉴로',
     'common.loadingDevices': '◇ 대상 기기 목록을 불러오는 중...',
-    // Setup guidance shown by cli.tsx before render() — see the note there and in
-    // scripts/check-i18n.mts on why these live in the dictionary yet are used
-    // outside the React tree.
-    // cli.tsx 가 render() 이전에 보여주는 셋업 안내 — 이 키들이 사전에 있으면서 React
-    // 트리 밖에서 쓰이는 이유는 cli.tsx 와 scripts/check-i18n.mts 의 설명 참고.
     'setup.noCli.title': '⚠  tailscale CLI를 찾을 수 없습니다.',
     'setup.daemonDown.title': '⚠  Tailscale 이 아직 준비되지 않았습니다.',
     'setup.noCli.intro': 'Taildrop 을 쓰려면 아래 단계를 순서대로 따르세요:',
-    // "status" not reporting a running tailnet covers both a stopped daemon and a
-    // logged-out one, so the wording names both rather than asserting one.
-    // "status" 가 실행 중인 tailnet 을 못 알리는 건 데몬 정지와 로그아웃 둘 다 해당하므로,
-    // 하나로 단정하지 않고 둘 다 언급한다.
     'setup.daemonDown.intro': 'CLI 는 있지만 Tailscale 이 실행 중이 아닙니다 — 데몬이 멈췄거나 로그인되지 않았습니다. 아래 단계를 따르세요:',
     'setup.step.install': 'tailscale 설치:',
     'setup.step.startDaemon': '데몬 시작:',
     'setup.step.login': '로그인:',
     'setup.win.daemonNote': '(Windows 서비스로 설치되어 설치 후 자동으로 시작됩니다.)',
     'setup.verify': '그런 다음 `tailscale status` 가 동작하는지 확인하세요.',
-    // CLI help / usage / errors, used by src/cli-core.ts (via makeT) — outside
-    // the React tree, like the setup.* keys above.
-    // src/cli-core.ts 가 makeT 로 쓰는 CLI 도움말·usage·오류. 위 setup.* 키처럼
-    // React 트리 밖에서 쓰인다.
     'cli.help.tagline': 'tailnet 위에서 Taildrop 으로 파일을 주고받습니다.',
     'cli.help.usage': '사용법:',
     'cli.desc.ui': '대화형 UI 실행 (명령을 주지 않으면 기본).',
@@ -260,22 +247,15 @@ const en = {
     'common.escBack': 'Esc Back',
     'common.enterMenu': 'Enter Menu',
     'common.loadingDevices': '◇ Loading devices...',
-    // Setup guidance shown by cli.tsx before render() — see the note there and in
-    // scripts/check-i18n.mts on why these live in the dictionary yet are used
-    // outside the React tree.
     'setup.noCli.title': '⚠  The tailscale CLI was not found.',
     'setup.daemonDown.title': "⚠  Tailscale isn't ready yet.",
     'setup.noCli.intro': 'Follow these steps, in order, to get Taildrop working:',
-    // "status" not reporting a running tailnet covers both a stopped daemon and a
-    // logged-out one, so the wording names both rather than asserting one.
     'setup.daemonDown.intro': "The CLI is installed but Tailscale isn't up — the daemon may be stopped, or you're not logged in. Follow these steps:",
     'setup.step.install': 'Install tailscale:',
     'setup.step.startDaemon': 'Start the daemon:',
     'setup.step.login': 'Log in:',
     'setup.win.daemonNote': '(Installed as a Windows service — it starts automatically after install.)',
     'setup.verify': 'Then run `tailscale status` to confirm it works.',
-    // CLI help / usage / errors, used by src/cli-core.ts (via makeT) — outside
-    // the React tree, like the setup.* keys above.
     'cli.help.tagline': 'Send and receive files over Taildrop on your tailnet.',
     'cli.help.usage': 'Usage:',
     'cli.desc.ui': 'Launch the interactive UI (default when no command is given).',
@@ -287,13 +267,7 @@ const en = {
     'cli.down.none': 'No files are waiting to be received.',
     'cli.down.location': 'Saved to: {dir}',
 };
-/** Exported because scripts/check-i18n.mts imports it to compare key sets.
- *  scripts/check-i18n.mts 가 키 대조에 사용하므로 export 한다. */
 export const dicts = { ko, en };
-/** Whether a value is a language the app has a dictionary for. Guards config
- *  from a hand-edited lang that would make makeT index dicts[undefined].
- *  값이 앱에 사전이 있는 언어인지. 손으로 고친 lang 이 makeT 에서 dicts[undefined]
- *  를 인덱싱하지 않도록 config 를 지킨다. */
 export function isLang(x) {
     return typeof x === 'string' && x in dicts;
 }
@@ -308,14 +282,6 @@ export function makeT(lang) {
         return s;
     };
 }
-/**
- * Help screen body as an array of lines per language. Prose paragraphs rather
- * than keyed strings, so check-i18n cannot verify these two stay in sync —
- * edit both languages together.
- *
- * 도움말 화면 본문 (언어별 줄 배열). 키-값이 아니라 문단이라 check-i18n 이
- * 정합성을 못 본다 — 양쪽 언어를 함께 고칠 것.
- */
 export function helpLines(lang) {
     if (lang === 'en') {
         return [

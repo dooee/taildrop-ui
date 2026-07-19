@@ -3,20 +3,6 @@ import { Box, Text, useInput } from 'ink';
 import Frame from './Frame.js';
 import { receive } from '../tailscale.js';
 import { useT } from '../i18n.js';
-/**
- * Folder verdicts get one sentence plus the offending path underneath.
- *
- * There is no jump to Settings on purpose. This screen knows only onDone, and
- * teaching it about Settings would leak Screen out of app.tsx, which is the
- * single state machine. menu.zipWarn set the precedent: point at [설정] in
- * prose, do not navigate.
- *
- * 폴더 판정은 "문장 한 줄 + 아래에 문제의 경로"로 보여준다.
- *
- * 설정 화면으로 점프하지 않는 것은 의도다. 이 화면은 onDone 만 알고, Settings 를
- * 알게 하면 Screen 이 단일 상태 머신인 app.tsx 밖으로 샌다. menu.zipWarn 이
- * 선례다 — 문구로 [설정] 을 가리키되 이동하지는 않는다.
- */
 const DIR_ERR_KEY = {
     'dir-missing': 'recv.err.dirMissing',
     'dir-not-dir': 'recv.err.dirNotDir',

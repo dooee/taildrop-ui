@@ -6,11 +6,6 @@ import Frame from './Frame.js';
 import { sendPaths } from '../tailscale.js';
 import { archiverInstallHint } from '../zip.js';
 import { useT } from '../i18n.js';
-/** Error codes whose UI is one sentence plus the raw detail underneath.
- *  archiver-missing is absent on purpose: what goes under it is an install
- *  command, not raw text.
- *  "문장 한 줄 + 아래에 원문"으로 끝나는 에러 코드들. archiver-missing 은 일부러
- *  빠져 있다 — 그 아래에 붙는 것은 원문이 아니라 설치 명령이다. */
 const ERR_KEY = {
     'archive-failed': 'send.err.archiveFailed',
     'symlink-path': 'send.err.symlinkPath',
@@ -19,10 +14,6 @@ const ERR_KEY = {
     'duplicate-name': 'send.err.duplicateName',
     empty: 'send.err.empty',
 };
-/** NameIssue → the short reason shown per file in the name-problem list.
- *  Spelled out so check-i18n sees the keys used, and both sides stay greppable.
- *  NameIssue 를 이름 문제 목록의 파일별 짧은 사유로 옮긴다. check-i18n 이 키가
- *  쓰인 것을 보도록, 그리고 양쪽 다 grep 되도록 적어 둔다. */
 const NAME_REASON_KEY = {
     space: 'send.err.nameReason.space',
     char: 'send.err.nameReason.char',
@@ -39,8 +30,6 @@ export default function Send({ bundleMultiple, onDone }) {
         if (stage === 'done' && (key.return || key.escape))
             onDone();
     });
-    // Turns the code strings tailscale.ts emits into localized prose.
-    // tailscale.ts 가 넘기는 로그 코드를 현재 언어 문구로 변환.
     const decodeLog = (code) => {
         if (code.startsWith('bundle:')) {
             return t('send.bundling', { n: code.slice('bundle:'.length) });
@@ -64,15 +53,7 @@ export default function Send({ bundleMultiple, onDone }) {
         setStage('done');
     };
     if (stage === 'browse') {
-        return (React.createElement(FileBrowser, { mode: "files", title: t('browser.filesTitle'), 
-            /* Opens where the command was launched, not the home: people send
-             * files from wherever they currently are (#5). Set here, not as the
-             * browser's own default — Settings' folder picker still falls back
-             * to home when the saved folder is broken.
-             * 명령이 실행된 곳에서 연다. 홈이 아니다 — 파일은 지금 있는 자리에서
-             * 보낸다 (#5). 브라우저의 기본값이 아니라 여기서 지정한다. Settings 의
-             * 폴더 피커는 저장된 폴더가 깨졌을 때 여전히 홈으로 폴백한다. */
-            initialDir: process.cwd(), bundleMultiple: bundleMultiple, onSubmit: (selected) => {
+        return (React.createElement(FileBrowser, { mode: "files", title: t('browser.filesTitle'), initialDir: process.cwd(), bundleMultiple: bundleMultiple, onSubmit: (selected) => {
                 setPaths(selected);
                 setStage('pickTarget');
             }, onCancel: onDone }));
@@ -90,7 +71,6 @@ export default function Send({ bundleMultiple, onDone }) {
                     '  ',
                     l))))));
     }
-    // done · 완료
     return (React.createElement(Frame, { screen: t('send.doneScreen'), footer: t('common.enterMenu') },
         React.createElement(Box, { flexDirection: "column" }, result?.ok ? (React.createElement(React.Fragment, null,
             React.createElement(Text, { color: "green" },
@@ -104,21 +84,11 @@ export default function Send({ bundleMultiple, onDone }) {
                 t('send.fail')),
             result?.errorCode === 'archiver-missing' ? (React.createElement(React.Fragment, null,
                 React.createElement(Text, null, t('send.err.archiverMissing')),
-                React.createElement(Text, { dimColor: true }, archiverInstallHint()))) : result?.nameProblems ? (
-            /* One line per refused name, each with its own reason. The header
-             * counts them; the list is what spares a fix-and-retry loop.
-             * 거부된 이름마다 한 줄, 각자의 사유와 함께. 헤더가 개수를 세고, 목록이
-             * 고치고-다시-보내는 반복을 덜어준다. */
-            React.createElement(React.Fragment, null,
+                React.createElement(Text, { dimColor: true }, archiverInstallHint()))) : result?.nameProblems ? (React.createElement(React.Fragment, null,
                 React.createElement(Text, null, t('send.err.nameListHeader', {
                     n: result.nameProblems.length,
                 })),
-                result.nameProblems.map((p, i) => (
-                // Key by index, not name: two picks from different folders can
-                // share a basename, and the name alone would collide.
-                // 이름이 아니라 인덱스로 키를 준다. 서로 다른 폴더의 두 선택이 같은
-                // basename 을 가질 수 있어, 이름만으로는 충돌한다.
-                React.createElement(Text, { key: i },
+                result.nameProblems.map((p, i) => (React.createElement(Text, { key: i },
                     React.createElement(Text, { color: "yellow" }, '  ✕ '),
                     p.name,
                     React.createElement(Text, { dimColor: true },
