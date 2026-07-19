@@ -100,6 +100,20 @@ const UI_FILES = [
     .map((f) => `src/components/${f}`),
 ];
 
+/**
+ * Files scanned for key *references* (the orphan check). This is a superset of
+ * UI_FILES: cli.tsx is skipped by the hardcoding scan because it runs before
+ * the React context (so a Hangul literal there is legitimate), but it still
+ * pulls its setup-guidance strings from the dictionary via makeT — so its keys
+ * must count as used, or they would read as orphans.
+ *
+ * 키 *참조* 검사(고아 검사) 대상 파일. UI_FILES 의 상위집합이다. cli.tsx 는 React
+ * 컨텍스트 이전에 돌아 하드코딩 스캔에서 빠지지만(그곳의 한글 리터럴은 정당하다),
+ * makeT 로 사전에서 셋업 안내 문구를 가져다 쓴다 — 그 키들이 사용된 것으로
+ * 집계되지 않으면 고아로 읽히기 때문이다.
+ */
+const REF_FILES = [...UI_FILES, 'src/cli.tsx'];
+
 const problems: string[] = [];
 
 // 1. ko/en key parity. makeT falls back to ko silently, so a missing en key
@@ -117,7 +131,7 @@ for (const k of enKeys) {
 
 // 2. Orphan keys: defined but never referenced. A signal someone hardcoded it.
 // 2. 고아 키 — 사전에만 있고 코드가 안 쓰는 키. 하드코딩의 신호다.
-const sources = UI_FILES.map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
+const sources = REF_FILES.map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
 for (const k of koKeys) {
   if (!sources.includes(`'${k}'`)) {
     problems.push(m.orphan(k));

@@ -73,14 +73,56 @@ export async function resolveTailscale(): Promise<string> {
   throw new Error('tailscale CLI not found');
 }
 
-/** Whether the tailscale CLI is installed (drives the install hint).
- *  tailscale CLI 가 설치되어 있는지 (설치 안내용). */
-export async function hasTailscale(): Promise<boolean> {
+/**
+ * The three states the app must tell apart before it can run, and guide.
+ *
+ * - `no-cli`: the tailscale binary is nowhere to be found. Install first.
+ * - `daemon-down`: the CLI is installed but `tailscale status` fails, so the
+ *   local tailscaled is not answering — stopped, not yet started, or (on a
+ *   freshly started daemon) not logged in. All three are fixed by the same
+ *   "start the daemon, then `tailscale up`" guidance, so they share a verdict.
+ * - `ok`: the CLI is present and `status` succeeds.
+ *
+ * A discriminated union rather than a boolean pair: the caller switches on one
+ * `kind` and cannot forget a case or invent an impossible one.
+ *
+ * 앱이 실행·안내 전에 구분해야 하는 세 상태.
+ * - `no-cli`: tailscale 실행 파일이 없다. 먼저 설치.
+ * - `daemon-down`: CLI 는 있으나 `tailscale status` 가 실패한다. 로컬 tailscaled 가
+ *   응답하지 않는 것 — 멈췄거나, 아직 시작 전이거나, (막 켠 데몬이면) 로그인
+ *   전이다. 셋 다 "데몬을 켜고 `tailscale up`" 이라는 같은 안내로 해결되므로 한
+ *   판정을 공유한다.
+ * - `ok`: CLI 가 있고 `status` 가 성공한다.
+ */
+export type SetupStatus =
+  | { kind: 'no-cli' }
+  | { kind: 'daemon-down' }
+  | { kind: 'ok' };
+
+/**
+ * Judges the setup: is the CLI there, and is the daemon answering? Runs
+ * `tailscale status` and treats any non-zero exit (execa throws) as the daemon
+ * not answering — the check is the exit code, not the message, so it holds
+ * across tailscale versions and locales. This is the one place a subprocess
+ * decides the verdict; cli.tsx only reads the `kind`.
+ *
+ * 셋업을 판정한다: CLI 가 있는가, 데몬이 응답하는가? `tailscale status` 를 돌리고
+ * 비정상 종료(execa 가 throw)는 전부 데몬 미응답으로 본다 — 판단 기준은 메시지가
+ * 아니라 종료 코드라서 tailscale 버전·로케일과 무관하게 성립한다. 서브프로세스가
+ * 판정을 내리는 유일한 곳이고, cli.tsx 는 `kind` 만 읽는다.
+ */
+export async function checkTailscale(): Promise<SetupStatus> {
+  let bin: string;
   try {
-    await resolveTailscale();
-    return true;
+    bin = await resolveTailscale();
   } catch {
-    return false;
+    return { kind: 'no-cli' };
+  }
+  try {
+    await execa(bin, ['status']);
+    return { kind: 'ok' };
+  } catch {
+    return { kind: 'daemon-down' };
   }
 }
 

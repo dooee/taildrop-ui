@@ -55,15 +55,32 @@ export async function resolveTailscale() {
     }
     throw new Error('tailscale CLI not found');
 }
-/** Whether the tailscale CLI is installed (drives the install hint).
- *  tailscale CLI 가 설치되어 있는지 (설치 안내용). */
-export async function hasTailscale() {
+/**
+ * Judges the setup: is the CLI there, and is the daemon answering? Runs
+ * `tailscale status` and treats any non-zero exit (execa throws) as the daemon
+ * not answering — the check is the exit code, not the message, so it holds
+ * across tailscale versions and locales. This is the one place a subprocess
+ * decides the verdict; cli.tsx only reads the `kind`.
+ *
+ * 셋업을 판정한다: CLI 가 있는가, 데몬이 응답하는가? `tailscale status` 를 돌리고
+ * 비정상 종료(execa 가 throw)는 전부 데몬 미응답으로 본다 — 판단 기준은 메시지가
+ * 아니라 종료 코드라서 tailscale 버전·로케일과 무관하게 성립한다. 서브프로세스가
+ * 판정을 내리는 유일한 곳이고, cli.tsx 는 `kind` 만 읽는다.
+ */
+export async function checkTailscale() {
+    let bin;
     try {
-        await resolveTailscale();
-        return true;
+        bin = await resolveTailscale();
     }
     catch {
-        return false;
+        return { kind: 'no-cli' };
+    }
+    try {
+        await execa(bin, ['status']);
+        return { kind: 'ok' };
+    }
+    catch {
+        return { kind: 'daemon-down' };
     }
 }
 let cachedBudget = null;

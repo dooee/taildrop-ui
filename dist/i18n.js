@@ -113,6 +113,24 @@ const ko = {
     'common.escBack': 'Esc 뒤로',
     'common.enterMenu': 'Enter 메뉴로',
     'common.loadingDevices': '◇ 대상 기기 목록을 불러오는 중...',
+    // Setup guidance shown by cli.tsx before render() — see the note there and in
+    // scripts/check-i18n.mts on why these live in the dictionary yet are used
+    // outside the React tree.
+    // cli.tsx 가 render() 이전에 보여주는 셋업 안내 — 이 키들이 사전에 있으면서 React
+    // 트리 밖에서 쓰이는 이유는 cli.tsx 와 scripts/check-i18n.mts 의 설명 참고.
+    'setup.noCli.title': '⚠  tailscale CLI를 찾을 수 없습니다.',
+    'setup.daemonDown.title': '⚠  Tailscale 이 아직 준비되지 않았습니다.',
+    'setup.noCli.intro': 'Taildrop 을 쓰려면 아래 단계를 순서대로 따르세요:',
+    // "status" not reporting a running tailnet covers both a stopped daemon and a
+    // logged-out one, so the wording names both rather than asserting one.
+    // "status" 가 실행 중인 tailnet 을 못 알리는 건 데몬 정지와 로그아웃 둘 다 해당하므로,
+    // 하나로 단정하지 않고 둘 다 언급한다.
+    'setup.daemonDown.intro': 'CLI 는 있지만 Tailscale 이 실행 중이 아닙니다 — 데몬이 멈췄거나 로그인되지 않았습니다. 아래 단계를 따르세요:',
+    'setup.step.install': 'tailscale 설치:',
+    'setup.step.startDaemon': '데몬 시작:',
+    'setup.step.login': '로그인:',
+    'setup.win.daemonNote': '(Windows 서비스로 설치되어 설치 후 자동으로 시작됩니다.)',
+    'setup.verify': '그런 다음 `tailscale status` 가 동작하는지 확인하세요.',
 };
 const en = {
     'app.subtitle': 'Tailscale file transfer',
@@ -228,6 +246,20 @@ const en = {
     'common.escBack': 'Esc Back',
     'common.enterMenu': 'Enter Menu',
     'common.loadingDevices': '◇ Loading devices...',
+    // Setup guidance shown by cli.tsx before render() — see the note there and in
+    // scripts/check-i18n.mts on why these live in the dictionary yet are used
+    // outside the React tree.
+    'setup.noCli.title': '⚠  The tailscale CLI was not found.',
+    'setup.daemonDown.title': "⚠  Tailscale isn't ready yet.",
+    'setup.noCli.intro': 'Follow these steps, in order, to get Taildrop working:',
+    // "status" not reporting a running tailnet covers both a stopped daemon and a
+    // logged-out one, so the wording names both rather than asserting one.
+    'setup.daemonDown.intro': "The CLI is installed but Tailscale isn't up — the daemon may be stopped, or you're not logged in. Follow these steps:",
+    'setup.step.install': 'Install tailscale:',
+    'setup.step.startDaemon': 'Start the daemon:',
+    'setup.step.login': 'Log in:',
+    'setup.win.daemonNote': '(Installed as a Windows service — it starts automatically after install.)',
+    'setup.verify': 'Then run `tailscale status` to confirm it works.',
 };
 /** Exported because scripts/check-i18n.mts imports it to compare key sets.
  *  scripts/check-i18n.mts 가 키 대조에 사용하므로 export 한다. */
