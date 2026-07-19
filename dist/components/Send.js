@@ -64,7 +64,15 @@ export default function Send({ bundleMultiple, onDone }) {
         setStage('done');
     };
     if (stage === 'browse') {
-        return (React.createElement(FileBrowser, { mode: "files", title: t('browser.filesTitle'), bundleMultiple: bundleMultiple, onSubmit: (selected) => {
+        return (React.createElement(FileBrowser, { mode: "files", title: t('browser.filesTitle'), 
+            /* Opens where the command was launched, not the home: people send
+             * files from wherever they currently are (#5). Set here, not as the
+             * browser's own default — Settings' folder picker still falls back
+             * to home when the saved folder is broken.
+             * 명령이 실행된 곳에서 연다. 홈이 아니다 — 파일은 지금 있는 자리에서
+             * 보낸다 (#5). 브라우저의 기본값이 아니라 여기서 지정한다. Settings 의
+             * 폴더 피커는 저장된 폴더가 깨졌을 때 여전히 홈으로 폴백한다. */
+            initialDir: process.cwd(), bundleMultiple: bundleMultiple, onSubmit: (selected) => {
                 setPaths(selected);
                 setStage('pickTarget');
             }, onCancel: onDone }));
