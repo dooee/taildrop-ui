@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import FileBrowser from './FileBrowser.js';
 import Frame from './Frame.js';
@@ -53,6 +53,24 @@ export default function Settings({
   const [stage, setStage] = useState<Stage>('menu');
   const [savedKey, setSavedKey] = useState<string>('set.savedDir');
   const [checking, setChecking] = useState(false);
+
+  /**
+   * ESC returns each submenu to the Settings menu, as the footer hint
+   * promises. pickDir is excluded — FileBrowser owns ESC via onCancel there,
+   * and a second handler would fire alongside it.
+   *
+   * ESC 는 푸터 안내대로 각 서브메뉴에서 설정 메뉴로 돌아간다. pickDir 은
+   * 제외 — 그 화면은 FileBrowser 가 onCancel 로 ESC 를 직접 처리하며,
+   * 여기서도 받으면 핸들러가 이중으로 동작한다.
+   */
+  useInput((_input, key) => {
+    if (
+      key.escape &&
+      (stage === 'pickLang' || stage === 'pickMulti' || stage === 'zip')
+    ) {
+      setStage('menu');
+    }
+  });
 
   const commit = (next: Config, msgKey: string) => {
     saveConfig(next);
