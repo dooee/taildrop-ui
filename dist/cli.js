@@ -6,6 +6,7 @@ import { checkTailscale, receive } from './tailscale.js';
 import { loadConfig } from './config.js';
 import { makeT } from './i18n.js';
 import { parseArgs, runDown, renderHelp, renderUsage, renderUnknownCommand, } from './cli-core.js';
+import { makeStyle, shouldColor } from './cli-style.js';
 const SETUP_COMMANDS = {
     darwin: {
         install: 'brew install tailscale',
@@ -40,7 +41,7 @@ function commandsFor(platform) {
  * 데몬은 설치 단계를 건너뛰되 데몬 시작과 로그인은 여전히 필요하다. 번호는 사전이
  * 아니라 여기서 매기므로, 설치를 건너뛰면 나머지 번호가 깔끔히 다시 매겨진다.
  */
-function guidanceLines(t, platform, needsInstall) {
+function guidanceLines(t, platform, needsInstall, style) {
     const cmds = commandsFor(platform);
     const steps = [];
     if (needsInstall) {
@@ -59,8 +60,12 @@ function guidanceLines(t, platform, needsInstall) {
     // 번호는 라벨이 지닌다.
     const lines = [];
     steps.forEach((step, i) => {
-        lines.push(`  ${i + 1}) ${step.label}`);
-        lines.push(`     ${step.body}`);
+        // The numbered label is emphasized; the command body wears the same color
+        // as literal commands elsewhere. Color off collapses both to plain text.
+        // 번호 라벨은 강조하고, 명령 본문은 다른 곳의 리터럴 명령과 같은 색을 두른다.
+        // 색이 꺼지면 둘 다 평문으로 접힌다.
+        lines.push(`  ${style.bold(`${i + 1}) ${step.label}`)}`);
+        lines.push(`     ${style.cyan(step.body)}`);
         lines.push('');
     });
     return lines;
@@ -75,7 +80,7 @@ function guidanceLines(t, platform, needsInstall) {
  * 실행과 --down 이 공유한다 — 둘 다 실행 중인 데몬이 필요하고, 없을 때 원시
  * 서브프로세스 오류로 실패하기보다 같은 방식으로 안내해야 한다.
  */
-async function ensureReadyOrExit(t, platform) {
+async function ensureReadyOrExit(t, platform, style) {
     const status = await checkTailscale();
     if (status.kind === 'ok')
         return;
@@ -84,12 +89,12 @@ async function ensureReadyOrExit(t, platform) {
     const intro = t(needsInstall ? 'setup.noCli.intro' : 'setup.daemonDown.intro');
     const msg = [
         '',
-        `  ${title}`,
+        `  ${style.yellow(title)}`,
         '',
         `  ${intro}`,
         '',
-        ...guidanceLines(t, platform, needsInstall),
-        `  ${t('setup.verify')}`,
+        ...guidanceLines(t, platform, needsInstall, style),
+        `  ${style.dim(t('setup.verify'))}`,
         '',
     ];
     process.stderr.write(msg.join('\n') + '\n');
@@ -111,6 +116,28 @@ async function main() {
      */
     const t = makeT(config.lang);
     const platform = process.platform;
+    /*
+     * The color decision lives here, in the impure shell — the render functions
+     * stay pure and just receive a styler. It is made per output stream: color
+     * only when that stream is a terminal and NO_COLOR is unset (FORCE_COLOR can
+     * override the TTY check). Help prints to stdout; usage, unknown-command and
+     * the setup guidance print to stderr. --down may print to either stream
+     * depending on its outcome, so it colors only when both are terminals — that
+     * way a redirected stream is never given ANSI it did not ask for.
+     *
+     * 색 결정은 여기 불순한 껍데기에 산다 — 렌더 함수는 순수하게 두고 styler 만
+     * 받는다. 출력 스트림별로 정한다: 그 스트림이 터미널이고 NO_COLOR 가 없을 때만
+     * 색(FORCE_COLOR 는 TTY 검사를 덮는다). 도움말은 stdout, usage·존재하지 않는
+     * 명령·셋업 안내는 stderr 로 나간다. --down 은 결과에 따라 어느 스트림으로도
+     * 나갈 수 있어 둘 다 터미널일 때만 색을 입힌다 — 리다이렉트된 스트림에 원치 않는
+     * ANSI 를 주지 않기 위함이다.
+     */
+    const noColor = 'NO_COLOR' in process.env;
+    const forceColor = 'FORCE_COLOR' in process.env && process.env.FORCE_COLOR !== '0';
+    const styleFor = (isTTY) => makeStyle(shouldColor({ isTTY, noColor, forceColor }));
+    const stdoutStyle = styleFor(Boolean(process.stdout.isTTY));
+    const stderrStyle = styleFor(Boolean(process.stderr.isTTY));
+    const downStyle = styleFor(Boolean(process.stdout.isTTY) && Boolean(process.stderr.isTTY));
     // process.argv is [node, script, ...rest]; the router only wants ...rest.
     // process.argv 는 [node, script, ...rest]. 라우터는 ...rest 만 본다.
     const route = parseArgs(process.argv.slice(2));
@@ -118,23 +145,24 @@ async function main() {
         // Help and command errors need no daemon: they only read argv and print.
         // 도움말과 명령 오류는 데몬이 필요 없다 — argv 를 읽어 출력할 뿐이다.
         case 'help':
-            process.stdout.write(renderHelp(t).join('\n') + '\n');
+            process.stdout.write(renderHelp(t, stdoutStyle).join('\n') + '\n');
             return;
         case 'usage':
-            process.stderr.write(renderUsage(t, route.command).join('\n') + '\n');
+            process.stderr.write(renderUsage(t, route.command, stderrStyle).join('\n') + '\n');
             process.exit(1);
             return;
         case 'unknown':
-            process.stderr.write(renderUnknownCommand(t, route.command).join('\n') + '\n');
+            process.stderr.write(renderUnknownCommand(t, route.command, stderrStyle).join('\n') + '\n');
             process.exit(1);
             return;
         case 'down': {
-            await ensureReadyOrExit(t, platform);
+            await ensureReadyOrExit(t, platform, stderrStyle);
             const outcome = await runDown(route.path, {
                 receive,
                 configDownloadDir: config.downloadDir,
                 cwd: process.cwd(),
                 t,
+                style: downStyle,
             });
             const out = outcome.exitCode === 0 ? process.stdout : process.stderr;
             out.write(outcome.lines.join('\n') + '\n');
@@ -142,7 +170,7 @@ async function main() {
             return;
         }
         case 'ui':
-            await ensureReadyOrExit(t, platform);
+            await ensureReadyOrExit(t, platform, stderrStyle);
             render(React.createElement(App, null));
             return;
     }

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { plainStyle } from './cli-style.js';
 /**
  * Routes argv (without node/script) to a CliRoute. Pure — no I/O, no exit.
  *
@@ -66,17 +67,17 @@ const DIR_ERR_KEY = {
  *  so the whole summary is tested with stubbed results.
  *  ReceiveResult 를 지역화된 요약 줄과 종료 코드로 바꾼다. 순수라 스텁 결과로 요약
  *  전체를 검사한다. */
-export function renderDownResult(t, result, dir) {
+export function renderDownResult(t, result, dir, style = plainStyle) {
     const shown = path.resolve(dir);
     if (result.ok) {
         if (result.savedNames.length === 0) {
-            return { lines: [t('cli.down.none')], exitCode: 0 };
+            return { lines: [style.dim(t('cli.down.none'))], exitCode: 0 };
         }
         return {
             lines: [
-                t('cli.down.received', { n: result.savedNames.length }),
-                ...result.savedNames.map((n) => `  ${n}`),
-                t('cli.down.location', { dir: shown }),
+                style.green(t('cli.down.received', { n: result.savedNames.length })),
+                ...result.savedNames.map((n) => `  ${style.cyan(n)}`),
+                style.dim(t('cli.down.location', { dir: shown })),
             ],
             exitCode: 0,
         };
@@ -89,9 +90,9 @@ export function renderDownResult(t, result, dir) {
     if (result.errorCode && DIR_ERR_KEY[result.errorCode]) {
         return {
             lines: [
-                t('recv.fail'),
+                style.red(t('recv.fail')),
                 t(DIR_ERR_KEY[result.errorCode]),
-                `  ${result.error ?? shown}`,
+                `  ${style.dim(result.error ?? shown)}`,
             ],
             exitCode: 1,
         };
@@ -101,9 +102,9 @@ export function renderDownResult(t, result, dir) {
     if (result.needsSudo && result.sudoCmd) {
         return {
             lines: [
-                t('recv.needSudoTitle'),
+                style.yellow(t('recv.needSudoTitle')),
                 t('recv.needSudoHint'),
-                `  ${result.sudoCmd}`,
+                `  ${style.cyan(result.sudoCmd)}`,
             ],
             exitCode: 1,
         };
@@ -111,7 +112,10 @@ export function renderDownResult(t, result, dir) {
     // Anything else: the raw error, untranslated, under a translated heading.
     // 그 밖의 것: 번역된 제목 아래 번역되지 않은 원문 오류.
     return {
-        lines: [t('recv.fail'), ...(result.error ? [`  ${result.error}`] : [])],
+        lines: [
+            style.red(t('recv.fail')),
+            ...(result.error ? [`  ${style.dim(result.error)}`] : []),
+        ],
         exitCode: 1,
     };
 }
@@ -122,7 +126,7 @@ export function renderDownResult(t, result, dir) {
 export async function runDown(pathArg, deps) {
     const dir = resolveDownDir(pathArg, deps.configDownloadDir, deps.cwd);
     const result = await deps.receive(dir);
-    return renderDownResult(deps.t, result, dir);
+    return renderDownResult(deps.t, result, dir, deps.style ?? plainStyle);
 }
 /**
  * The synopsis lines are literal commands to type, so they stay out of the
@@ -137,10 +141,18 @@ const SYNOPSIS = {
     down: 'tailtoss --down [path]',
     help: 'tailtoss --help',
 };
-/** Pads a synopsis to a shared column so the descriptions line up.
- *  시놉시스를 공통 열까지 채워 설명을 정렬한다. */
-function row(synopsis, desc) {
-    return `  ${synopsis.padEnd(24)}${desc}`;
+/**
+ * Pads a synopsis to a shared column so the descriptions line up, then styles
+ * both. The padding happens on the raw text before coloring, so the ANSI bytes
+ * never count toward the column width and alignment survives; the command style
+ * is foreground-only so the trailing pad spaces carry no visible fill.
+ *
+ * 시놉시스를 공통 열까지 채워 설명을 정렬한 뒤 둘 다 스타일링한다. 채움은 색을
+ * 입히기 전 원문에서 하므로 ANSI 바이트가 열 폭에 세어지지 않아 정렬이 살고,
+ * 명령 스타일은 전경색만이라 뒤따르는 채움 공백에 보이는 배경이 남지 않는다.
+ */
+function row(synopsis, desc, style) {
+    return `  ${style.cyan(synopsis.padEnd(24))}${style.dim(desc)}`;
 }
 /**
  * The full help, printed for --help and after an unknown-command notice. Lists
@@ -151,16 +163,20 @@ function row(synopsis, desc) {
  * 포함(이슈 #3 과의 커플)한 모든 명령을 지역화 설명과 함께 나열한 뒤, --down 의
  * 경로 규칙을 덧붙인다.
  */
-export function renderHelp(t) {
+export function renderHelp(t, style = plainStyle) {
     return [
-        `tailtoss — ${t('cli.help.tagline')}`,
+        // The product line doubles as the banner: the name wears the badge, the
+        // tagline the product color. Off, it collapses to `tailtoss — <tagline>`.
+        // 제품 줄이 배너를 겸한다 — 이름은 배지를, 태그라인은 제품 색을 두른다. 색이
+        // 꺼지면 `tailtoss — <tagline>` 으로 접힌다.
+        `${style.banner('tailtoss')}${style.cyan(` — ${t('cli.help.tagline')}`)}`,
         '',
-        t('cli.help.usage'),
-        row(SYNOPSIS.ui, t('cli.desc.ui')),
-        row(SYNOPSIS.down, t('cli.desc.down')),
-        row(SYNOPSIS.help, t('cli.desc.help')),
+        style.bold(t('cli.help.usage')),
+        row(SYNOPSIS.ui, t('cli.desc.ui'), style),
+        row(SYNOPSIS.down, t('cli.desc.down'), style),
+        row(SYNOPSIS.help, t('cli.desc.help'), style),
         '',
-        `  ${t('cli.down.pathNote')}`,
+        `  ${style.dim(t('cli.down.pathNote'))}`,
     ];
 }
 /**
@@ -172,16 +188,16 @@ export function renderHelp(t) {
  * --down 뿐이다. 알 수 없는 이름은 전체 도움말로 폴백해 호출자가 빈 usage 를
  * 렌더링하지 않게 한다.
  */
-export function renderUsage(t, command) {
+export function renderUsage(t, command, style = plainStyle) {
     if (command === 'down') {
         return [
-            t('cli.help.usage'),
-            `  ${SYNOPSIS.down}`,
+            style.bold(t('cli.help.usage')),
+            `  ${style.cyan(SYNOPSIS.down)}`,
             '',
-            `  ${t('cli.down.pathNote')}`,
+            `  ${style.dim(t('cli.down.pathNote'))}`,
         ];
     }
-    return renderHelp(t);
+    return renderHelp(t, style);
 }
 /**
  * The unknown-command output: a notice naming the offending token, a blank
@@ -190,6 +206,10 @@ export function renderUsage(t, command) {
  * 존재하지 않는 명령 출력: 문제의 토큰을 짚는 안내, 빈 줄, 그다음 --help 와 같은
  * 전체 도움말(이슈 #4).
  */
-export function renderUnknownCommand(t, command) {
-    return [t('cli.unknownCommand', { command }), '', ...renderHelp(t)];
+export function renderUnknownCommand(t, command, style = plainStyle) {
+    return [
+        style.yellow(t('cli.unknownCommand', { command })),
+        '',
+        ...renderHelp(t, style),
+    ];
 }

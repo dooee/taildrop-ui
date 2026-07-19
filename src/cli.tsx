@@ -12,6 +12,7 @@ import {
   renderUsage,
   renderUnknownCommand,
 } from './cli-core.js';
+import { type Styler, makeStyle, shouldColor } from './cli-style.js';
 
 /**
  * Per-platform setup commands, meant to be copy-pasted. These are literal shell
@@ -71,6 +72,7 @@ function guidanceLines(
   t: ReturnType<typeof makeT>,
   platform: NodeJS.Platform,
   needsInstall: boolean,
+  style: Styler,
 ): string[] {
   const cmds = commandsFor(platform);
   const steps: { label: string; body: string }[] = [];
@@ -92,8 +94,12 @@ function guidanceLines(
   // 번호는 라벨이 지닌다.
   const lines: string[] = [];
   steps.forEach((step, i) => {
-    lines.push(`  ${i + 1}) ${step.label}`);
-    lines.push(`     ${step.body}`);
+    // The numbered label is emphasized; the command body wears the same color
+    // as literal commands elsewhere. Color off collapses both to plain text.
+    // 번호 라벨은 강조하고, 명령 본문은 다른 곳의 리터럴 명령과 같은 색을 두른다.
+    // 색이 꺼지면 둘 다 평문으로 접힌다.
+    lines.push(`  ${style.bold(`${i + 1}) ${step.label}`)}`);
+    lines.push(`     ${style.cyan(step.body)}`);
     lines.push('');
   });
   return lines;
@@ -112,6 +118,7 @@ function guidanceLines(
 async function ensureReadyOrExit(
   t: ReturnType<typeof makeT>,
   platform: NodeJS.Platform,
+  style: Styler,
 ): Promise<void> {
   const status = await checkTailscale();
   if (status.kind === 'ok') return;
@@ -121,12 +128,12 @@ async function ensureReadyOrExit(
   const intro = t(needsInstall ? 'setup.noCli.intro' : 'setup.daemonDown.intro');
   const msg = [
     '',
-    `  ${title}`,
+    `  ${style.yellow(title)}`,
     '',
     `  ${intro}`,
     '',
-    ...guidanceLines(t, platform, needsInstall),
-    `  ${t('setup.verify')}`,
+    ...guidanceLines(t, platform, needsInstall, style),
+    `  ${style.dim(t('setup.verify'))}`,
     '',
   ];
   process.stderr.write(msg.join('\n') + '\n');
@@ -151,6 +158,33 @@ async function main() {
   const t = makeT(config.lang);
   const platform = process.platform;
 
+  /*
+   * The color decision lives here, in the impure shell — the render functions
+   * stay pure and just receive a styler. It is made per output stream: color
+   * only when that stream is a terminal and NO_COLOR is unset (FORCE_COLOR can
+   * override the TTY check). Help prints to stdout; usage, unknown-command and
+   * the setup guidance print to stderr. --down may print to either stream
+   * depending on its outcome, so it colors only when both are terminals — that
+   * way a redirected stream is never given ANSI it did not ask for.
+   *
+   * 색 결정은 여기 불순한 껍데기에 산다 — 렌더 함수는 순수하게 두고 styler 만
+   * 받는다. 출력 스트림별로 정한다: 그 스트림이 터미널이고 NO_COLOR 가 없을 때만
+   * 색(FORCE_COLOR 는 TTY 검사를 덮는다). 도움말은 stdout, usage·존재하지 않는
+   * 명령·셋업 안내는 stderr 로 나간다. --down 은 결과에 따라 어느 스트림으로도
+   * 나갈 수 있어 둘 다 터미널일 때만 색을 입힌다 — 리다이렉트된 스트림에 원치 않는
+   * ANSI 를 주지 않기 위함이다.
+   */
+  const noColor = 'NO_COLOR' in process.env;
+  const forceColor =
+    'FORCE_COLOR' in process.env && process.env.FORCE_COLOR !== '0';
+  const styleFor = (isTTY: boolean): Styler =>
+    makeStyle(shouldColor({ isTTY, noColor, forceColor }));
+  const stdoutStyle = styleFor(Boolean(process.stdout.isTTY));
+  const stderrStyle = styleFor(Boolean(process.stderr.isTTY));
+  const downStyle = styleFor(
+    Boolean(process.stdout.isTTY) && Boolean(process.stderr.isTTY),
+  );
+
   // process.argv is [node, script, ...rest]; the router only wants ...rest.
   // process.argv 는 [node, script, ...rest]. 라우터는 ...rest 만 본다.
   const route = parseArgs(process.argv.slice(2));
@@ -159,26 +193,29 @@ async function main() {
     // Help and command errors need no daemon: they only read argv and print.
     // 도움말과 명령 오류는 데몬이 필요 없다 — argv 를 읽어 출력할 뿐이다.
     case 'help':
-      process.stdout.write(renderHelp(t).join('\n') + '\n');
+      process.stdout.write(renderHelp(t, stdoutStyle).join('\n') + '\n');
       return;
     case 'usage':
-      process.stderr.write(renderUsage(t, route.command).join('\n') + '\n');
+      process.stderr.write(
+        renderUsage(t, route.command, stderrStyle).join('\n') + '\n',
+      );
       process.exit(1);
       return;
     case 'unknown':
       process.stderr.write(
-        renderUnknownCommand(t, route.command).join('\n') + '\n',
+        renderUnknownCommand(t, route.command, stderrStyle).join('\n') + '\n',
       );
       process.exit(1);
       return;
 
     case 'down': {
-      await ensureReadyOrExit(t, platform);
+      await ensureReadyOrExit(t, platform, stderrStyle);
       const outcome = await runDown(route.path, {
         receive,
         configDownloadDir: config.downloadDir,
         cwd: process.cwd(),
         t,
+        style: downStyle,
       });
       const out = outcome.exitCode === 0 ? process.stdout : process.stderr;
       out.write(outcome.lines.join('\n') + '\n');
@@ -187,7 +224,7 @@ async function main() {
     }
 
     case 'ui':
-      await ensureReadyOrExit(t, platform);
+      await ensureReadyOrExit(t, platform, stderrStyle);
       render(<App />);
       return;
   }
