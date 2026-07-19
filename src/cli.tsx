@@ -5,7 +5,13 @@ import App from './app.js';
 import { checkTailscale, receive } from './tailscale.js';
 import { loadConfig } from './config.js';
 import { makeT } from './i18n.js';
-import { runDown } from './cli-core.js';
+import {
+  parseArgs,
+  runDown,
+  renderHelp,
+  renderUsage,
+  renderUnknownCommand,
+} from './cli-core.js';
 
 /**
  * Per-platform setup commands, meant to be copy-pasted. These are literal shell
@@ -145,27 +151,46 @@ async function main() {
   const t = makeT(config.lang);
   const platform = process.platform;
 
-  // process.argv is [node, script, ...rest]. --down [path] receives pending
-  // files without the UI; anything else launches the UI as before.
-  // process.argv 는 [node, script, ...rest]. --down [path] 는 UI 없이 대기 파일을
-  // 받고, 그 외에는 예전처럼 UI 를 실행한다.
-  const args = process.argv.slice(2);
+  // process.argv is [node, script, ...rest]; the router only wants ...rest.
+  // process.argv 는 [node, script, ...rest]. 라우터는 ...rest 만 본다.
+  const route = parseArgs(process.argv.slice(2));
 
-  if (args[0] === '--down') {
-    await ensureReadyOrExit(t, platform);
-    const outcome = await runDown(args[1], {
-      receive,
-      configDownloadDir: config.downloadDir,
-      cwd: process.cwd(),
-      t,
-    });
-    const out = outcome.exitCode === 0 ? process.stdout : process.stderr;
-    out.write(outcome.lines.join('\n') + '\n');
-    process.exit(outcome.exitCode);
+  switch (route.kind) {
+    // Help and command errors need no daemon: they only read argv and print.
+    // 도움말과 명령 오류는 데몬이 필요 없다 — argv 를 읽어 출력할 뿐이다.
+    case 'help':
+      process.stdout.write(renderHelp(t).join('\n') + '\n');
+      return;
+    case 'usage':
+      process.stderr.write(renderUsage(t, route.command).join('\n') + '\n');
+      process.exit(1);
+      return;
+    case 'unknown':
+      process.stderr.write(
+        renderUnknownCommand(t, route.command).join('\n') + '\n',
+      );
+      process.exit(1);
+      return;
+
+    case 'down': {
+      await ensureReadyOrExit(t, platform);
+      const outcome = await runDown(route.path, {
+        receive,
+        configDownloadDir: config.downloadDir,
+        cwd: process.cwd(),
+        t,
+      });
+      const out = outcome.exitCode === 0 ? process.stdout : process.stderr;
+      out.write(outcome.lines.join('\n') + '\n');
+      process.exit(outcome.exitCode);
+      return;
+    }
+
+    case 'ui':
+      await ensureReadyOrExit(t, platform);
+      render(<App />);
+      return;
   }
-
-  await ensureReadyOrExit(t, platform);
-  render(<App />);
 }
 
 main().catch((err) => {

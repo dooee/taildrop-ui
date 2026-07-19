@@ -131,10 +131,17 @@ const ko = {
     'setup.step.login': '로그인:',
     'setup.win.daemonNote': '(Windows 서비스로 설치되어 설치 후 자동으로 시작됩니다.)',
     'setup.verify': '그런 다음 `tailscale status` 가 동작하는지 확인하세요.',
-    // --down summary, used by src/cli-core.ts (via makeT) — outside the React
-    // tree, like the setup.* keys above.
-    // src/cli-core.ts 가 makeT 로 쓰는 --down 요약. 위 setup.* 키처럼 React 트리
-    // 밖에서 쓰인다.
+    // CLI help / usage / errors, used by src/cli-core.ts (via makeT) — outside
+    // the React tree, like the setup.* keys above.
+    // src/cli-core.ts 가 makeT 로 쓰는 CLI 도움말·usage·오류. 위 setup.* 키처럼
+    // React 트리 밖에서 쓰인다.
+    'cli.help.tagline': 'tailnet 위에서 Taildrop 으로 파일을 주고받습니다.',
+    'cli.help.usage': '사용법:',
+    'cli.desc.ui': '대화형 UI 실행 (명령을 주지 않으면 기본).',
+    'cli.desc.down': 'UI 없이 이 기기의 대기 파일을 받습니다.',
+    'cli.desc.help': '이 도움말을 표시합니다.',
+    'cli.down.pathNote': '[path] 를 생략하면 설정된 다운로드 폴더로 받습니다. "." 은 현재 디렉터리입니다.',
+    'cli.unknownCommand': '존재하지 않는 명령어입니다: {command}',
     'cli.down.received': '{n}개 파일을 받았습니다:',
     'cli.down.none': '받을 대기 파일이 없습니다.',
     'cli.down.location': '저장 위치: {dir}',
@@ -267,8 +274,15 @@ const en = {
     'setup.step.login': 'Log in:',
     'setup.win.daemonNote': '(Installed as a Windows service — it starts automatically after install.)',
     'setup.verify': 'Then run `tailscale status` to confirm it works.',
-    // --down summary, used by src/cli-core.ts (via makeT) — outside the React
-    // tree, like the setup.* keys above.
+    // CLI help / usage / errors, used by src/cli-core.ts (via makeT) — outside
+    // the React tree, like the setup.* keys above.
+    'cli.help.tagline': 'Send and receive files over Taildrop on your tailnet.',
+    'cli.help.usage': 'Usage:',
+    'cli.desc.ui': 'Launch the interactive UI (default when no command is given).',
+    'cli.desc.down': "Receive this device's pending files without the UI.",
+    'cli.desc.help': 'Show this help.',
+    'cli.down.pathNote': 'If [path] is omitted, receives into the configured download folder; "." means the current directory.',
+    'cli.unknownCommand': 'Unknown command: {command}',
     'cli.down.received': 'Received {n} file(s):',
     'cli.down.none': 'No files are waiting to be received.',
     'cli.down.location': 'Saved to: {dir}',
