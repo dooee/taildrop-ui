@@ -11,10 +11,100 @@
 import React from 'react';
 import { render } from 'ink-testing-library';
 import { Text } from 'ink';
-import { describe, it, expect } from 'vitest';
-import Frame from '../src/components/Frame.js';
+import { describe, it, expect, afterEach } from 'vitest';
+import Frame, { MIN_WIDTH } from '../src/components/Frame.js';
+
+/** Longest run of the horizontal-rule glyph in a rendered frame. Frame draws
+ *  its top/bottom rules across the full box width, so this equals the width
+ *  Frame chose. 프레임이 고른 폭과 같은, 렌더된 가로 구분선의 최대 길이. */
+function ruleWidth(out: string): number {
+  const lens = out
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^─+$/.test(line))
+    .map((line) => line.length);
+  return lens.length ? Math.max(...lens) : 0;
+}
+
+/** Render a Frame with process.stdout.columns temporarily stubbed. */
+function widthAtColumns(cols: number): number {
+  Object.defineProperty(process.stdout, 'columns', {
+    value: cols,
+    configurable: true,
+  });
+  const out =
+    render(
+      <Frame footer="f">
+        <Text>body</Text>
+      </Frame>,
+    ).lastFrame() ?? '';
+  return ruleWidth(out);
+}
+
+const originalColumns = Object.getOwnPropertyDescriptor(
+  process.stdout,
+  'columns',
+);
 
 describe('Frame', () => {
+  afterEach(() => {
+    if (originalColumns) {
+      Object.defineProperty(process.stdout, 'columns', originalColumns);
+    } else {
+      delete (process.stdout as unknown as { columns?: number }).columns;
+    }
+  });
+
+  it('widens to fill a wide terminal instead of capping at a fixed width', () => {
+    // A wide terminal was the complaint (issue #7): the frame looked "too
+    // small" because width was clamped to 66. It must now grow past that.
+    expect(widthAtColumns(200)).toBeGreaterThan(66);
+  });
+
+  it('grows the frame as the terminal gets wider', () => {
+    expect(widthAtColumns(120)).toBeGreaterThan(widthAtColumns(60));
+  });
+
+  it('keeps a minimum width once the terminal is wide enough', () => {
+    // Just below the floor + margin, the frame is held at MIN_WIDTH.
+    expect(widthAtColumns(MIN_WIDTH + 1)).toBe(MIN_WIDTH);
+  });
+
+  it('never overflows a terminal narrower than the minimum width', () => {
+    // On a very narrow terminal we fit the terminal rather than force the
+    // floor and overflow — the frame must never be wider than what's there.
+    for (const cols of [10, 20]) {
+      const width = widthAtColumns(cols);
+      expect(width).toBeGreaterThan(0); // still renders, no crash
+      expect(width).toBeLessThanOrEqual(cols); // no overflow
+    }
+  });
+
+  it('reacts to a live terminal resize', async () => {
+    Object.defineProperty(process.stdout, 'columns', {
+      value: 60,
+      configurable: true,
+    });
+    const app = render(
+      <Frame footer="f">
+        <Text>body</Text>
+      </Frame>,
+    );
+    const before = ruleWidth(app.lastFrame() ?? '');
+    // Let Frame's effect attach its 'resize' listener (passive effects run
+    // after commit). 프레임의 'resize' 리스너가 붙을 틈을 준다.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    Object.defineProperty(process.stdout, 'columns', {
+      value: 200,
+      configurable: true,
+    });
+    process.stdout.emit('resize');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(ruleWidth(app.lastFrame() ?? '')).toBeGreaterThan(before);
+  });
+
   it('renders the product title, the default (ko) subtitle, and the body', () => {
     const out = render(
       <Frame>
